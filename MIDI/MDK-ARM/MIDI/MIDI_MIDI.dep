@@ -89,13 +89,10 @@ I (..\Middlewares\Third_Party\TinyUSB\src\device\usbd.h)(0x698F0681)
 I (..\Middlewares\Third_Party\TinyUSB\src\class\midi\midi_device.h)(0x698F0681)
 I (..\Middlewares\Third_Party\TinyUSB\src\class\audio\audio.h)(0x698F0681)
 I (..\Middlewares\Third_Party\TinyUSB\src\class\midi\midi.h)(0x698F0681)
-I (..\Core\Inc\main.h)(0x699F2EC2)
-I (..\Drivers\BSP\STM32H5xx_Nucleo\stm32h5xx_nucleo.h)(0x6985D0E3)
-I (..\Core\Inc\stm32h5xx_nucleo_conf.h)(0x6985B9E6)
-I (..\Drivers\BSP\STM32H5xx_Nucleo\stm32h5xx_nucleo_errno.h)(0x6985D0E3)
-F (../Core/Src/mcp23s17.c)(0x699F2ECE)(-xc -std=c99 --target=arm-arm-none-eabi -mcpu=cortex-m33+nodsp -mfpu=fpv5-sp-d16 -mfloat-abi=hard -c-fno-rtti -funsigned-char -fshort-enums -fshort-wchar-gdwarf-4 -O3 -ffunction-sections -Wno-packed -Wno-missing-variable-declarations -Wno-missing-prototypes -Wno-missing-noreturn -Wno-sign-conversion -Wno-nonportable-include-path -Wno-reserved-id-macro -Wno-unused-macros -Wno-documentation-unknown-command -Wno-documentation -Wno-license-management -Wno-parentheses-equality -Wno-reserved-identifier -I ../Core/Inc -I ../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I ../Middlewares/ST/STM32_USB_Device_Library/Class/MIDI/Inc -I ../Drivers/STM32H5xx_HAL_Driver/Inc -I ../Drivers/STM32H5xx_HAL_Driver/Inc/Legacy -I ../Drivers/BSP/STM32H5xx_Nucleo -I ../Drivers/CMSIS/Device/ST/STM32H5xx/Include -I ../Drivers/CMSIS/Include -I ../Middlewares/Third_Party/TinyUSB/src -I ../Middlewares/Third_Party/TinyUSB/src/device -I ../Middlewares/Third_Party/TinyUSB/src/class/midi -I ../Middlewares/Third_Party/TinyUSB/src/class/audio -I ../Middlewares/Third_Party/TinyUSB/src/common -I ../Middlewares/Third_Party/TinyUSB/src/osal -I ../Middlewares/Third_Party/TinyUSB/hw/bsp -I ../Middlewares/Third_Party/TinyUSB/src/portable/synopsys/dwc2-I./RTE/_MIDI-IC:/Users/kobed/AppData/Local/arm/packs/ARM/CMSIS/6.3.0/CMSIS/Core/Include-D__UVISION_VERSION="541" -DSTM32H533xx -D_RTE_ -DUSE_NUCLEO_64 -DUSE_HAL_DRIVER -DSTM32H533xx-o midi/mcp23s17.o -MMD)
-I (..\Core\Inc\mcp23s17.h)(0x699F2863)
-I (..\Core\Inc\main.h)(0x699F2EC2)
+I (..\Core\Inc\main.h)(0x69A16276)
+F (../Core/Src/mcp23s17.c)(0x69A16107)(-xc -std=c99 --target=arm-arm-none-eabi -mcpu=cortex-m33+nodsp -mfpu=fpv5-sp-d16 -mfloat-abi=hard -c-fno-rtti -funsigned-char -fshort-enums -fshort-wchar-gdwarf-4 -O3 -ffunction-sections -Wno-packed -Wno-missing-variable-declarations -Wno-missing-prototypes -Wno-missing-noreturn -Wno-sign-conversion -Wno-nonportable-include-path -Wno-reserved-id-macro -Wno-unused-macros -Wno-documentation-unknown-command -Wno-documentation -Wno-license-management -Wno-parentheses-equality -Wno-reserved-identifier -I ../Core/Inc -I ../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I ../Middlewares/ST/STM32_USB_Device_Library/Class/MIDI/Inc -I ../Drivers/STM32H5xx_HAL_Driver/Inc -I ../Drivers/STM32H5xx_HAL_Driver/Inc/Legacy -I ../Drivers/BSP/STM32H5xx_Nucleo -I ../Drivers/CMSIS/Device/ST/STM32H5xx/Include -I ../Drivers/CMSIS/Include -I ../Middlewares/Third_Party/TinyUSB/src -I ../Middlewares/Third_Party/TinyUSB/src/device -I ../Middlewares/Third_Party/TinyUSB/src/class/midi -I ../Middlewares/Third_Party/TinyUSB/src/class/audio -I ../Middlewares/Third_Party/TinyUSB/src/common -I ../Middlewares/Third_Party/TinyUSB/src/osal -I ../Middlewares/Third_Party/TinyUSB/hw/bsp -I ../Middlewares/Third_Party/TinyUSB/src/portable/synopsys/dwc2-I./RTE/_MIDI-IC:/Users/kobed/AppData/Local/arm/packs/ARM/CMSIS/6.3.0/CMSIS/Core/Include-D__UVISION_VERSION="541" -DSTM32H533xx -D_RTE_ -DUSE_NUCLEO_64 -DUSE_HAL_DRIVER -DSTM32H533xx-o midi/mcp23s17.o -MMD)
+I (..\Core\Inc\mcp23s17.h)(0x69A16102)
+I (..\Core\Inc\main.h)(0x69A16276)
 I (..\Drivers\STM32H5xx_HAL_Driver\Inc\stm32h5xx_hal.h)(0x6985D0E5)
 I (..\Core\Inc\stm32h5xx_hal_conf.h)(0x698EEABA)
 I (..\Drivers\STM32H5xx_HAL_Driver\Inc\stm32h5xx_hal_rcc.h)(0x6985D0E5)
@@ -123,11 +120,8 @@ I (..\Drivers\STM32H5xx_HAL_Driver\Inc\stm32h5xx_hal_pcd.h)(0x6985D0E5)
 I (..\Drivers\STM32H5xx_HAL_Driver\Inc\stm32h5xx_ll_usb.h)(0x6985D0E4)
 I (..\Drivers\STM32H5xx_HAL_Driver\Inc\stm32h5xx_hal_pcd_ex.h)(0x6985D0E5)
 I (..\Drivers\STM32H5xx_HAL_Driver\Inc\stm32h5xx_hal_exti.h)(0x6985D0E5)
-I (..\Drivers\BSP\STM32H5xx_Nucleo\stm32h5xx_nucleo.h)(0x6985D0E3)
-I (..\Core\Inc\stm32h5xx_nucleo_conf.h)(0x6985B9E6)
-I (..\Drivers\BSP\STM32H5xx_Nucleo\stm32h5xx_nucleo_errno.h)(0x6985D0E3)
-F (../Core/Src/main.c)(0x699F319F)(-xc -std=c99 --target=arm-arm-none-eabi -mcpu=cortex-m33+nodsp -mfpu=fpv5-sp-d16 -mfloat-abi=hard -c-fno-rtti -funsigned-char -fshort-enums -fshort-wchar-gdwarf-4 -O3 -ffunction-sections -Wno-packed -Wno-missing-variable-declarations -Wno-missing-prototypes -Wno-missing-noreturn -Wno-sign-conversion -Wno-nonportable-include-path -Wno-reserved-id-macro -Wno-unused-macros -Wno-documentation-unknown-command -Wno-documentation -Wno-license-management -Wno-parentheses-equality -Wno-reserved-identifier -I ../Core/Inc -I ../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I ../Middlewares/ST/STM32_USB_Device_Library/Class/MIDI/Inc -I ../Drivers/STM32H5xx_HAL_Driver/Inc -I ../Drivers/STM32H5xx_HAL_Driver/Inc/Legacy -I ../Drivers/BSP/STM32H5xx_Nucleo -I ../Drivers/CMSIS/Device/ST/STM32H5xx/Include -I ../Drivers/CMSIS/Include -I ../Middlewares/Third_Party/TinyUSB/src -I ../Middlewares/Third_Party/TinyUSB/src/device -I ../Middlewares/Third_Party/TinyUSB/src/class/midi -I ../Middlewares/Third_Party/TinyUSB/src/class/audio -I ../Middlewares/Third_Party/TinyUSB/src/common -I ../Middlewares/Third_Party/TinyUSB/src/osal -I ../Middlewares/Third_Party/TinyUSB/hw/bsp -I ../Middlewares/Third_Party/TinyUSB/src/portable/synopsys/dwc2-I./RTE/_MIDI-IC:/Users/kobed/AppData/Local/arm/packs/ARM/CMSIS/6.3.0/CMSIS/Core/Include-D__UVISION_VERSION="541" -DSTM32H533xx -D_RTE_ -DUSE_NUCLEO_64 -DUSE_HAL_DRIVER -DSTM32H533xx-o midi/main.o -MMD)
-I (..\Core\Inc\main.h)(0x699F2EC2)
+F (../Core/Src/main.c)(0x69A16270)(-xc -std=c99 --target=arm-arm-none-eabi -mcpu=cortex-m33+nodsp -mfpu=fpv5-sp-d16 -mfloat-abi=hard -c-fno-rtti -funsigned-char -fshort-enums -fshort-wchar-gdwarf-4 -O3 -ffunction-sections -Wno-packed -Wno-missing-variable-declarations -Wno-missing-prototypes -Wno-missing-noreturn -Wno-sign-conversion -Wno-nonportable-include-path -Wno-reserved-id-macro -Wno-unused-macros -Wno-documentation-unknown-command -Wno-documentation -Wno-license-management -Wno-parentheses-equality -Wno-reserved-identifier -I ../Core/Inc -I ../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I ../Middlewares/ST/STM32_USB_Device_Library/Class/MIDI/Inc -I ../Drivers/STM32H5xx_HAL_Driver/Inc -I ../Drivers/STM32H5xx_HAL_Driver/Inc/Legacy -I ../Drivers/BSP/STM32H5xx_Nucleo -I ../Drivers/CMSIS/Device/ST/STM32H5xx/Include -I ../Drivers/CMSIS/Include -I ../Middlewares/Third_Party/TinyUSB/src -I ../Middlewares/Third_Party/TinyUSB/src/device -I ../Middlewares/Third_Party/TinyUSB/src/class/midi -I ../Middlewares/Third_Party/TinyUSB/src/class/audio -I ../Middlewares/Third_Party/TinyUSB/src/common -I ../Middlewares/Third_Party/TinyUSB/src/osal -I ../Middlewares/Third_Party/TinyUSB/hw/bsp -I ../Middlewares/Third_Party/TinyUSB/src/portable/synopsys/dwc2-I./RTE/_MIDI-IC:/Users/kobed/AppData/Local/arm/packs/ARM/CMSIS/6.3.0/CMSIS/Core/Include-D__UVISION_VERSION="541" -DSTM32H533xx -D_RTE_ -DUSE_NUCLEO_64 -DUSE_HAL_DRIVER -DSTM32H533xx-o midi/main.o -MMD)
+I (..\Core\Inc\main.h)(0x69A16276)
 I (..\Drivers\STM32H5xx_HAL_Driver\Inc\stm32h5xx_hal.h)(0x6985D0E5)
 I (..\Core\Inc\stm32h5xx_hal_conf.h)(0x698EEABA)
 I (..\Drivers\STM32H5xx_HAL_Driver\Inc\stm32h5xx_hal_rcc.h)(0x6985D0E5)
@@ -155,9 +149,6 @@ I (..\Drivers\STM32H5xx_HAL_Driver\Inc\stm32h5xx_hal_pcd.h)(0x6985D0E5)
 I (..\Drivers\STM32H5xx_HAL_Driver\Inc\stm32h5xx_ll_usb.h)(0x6985D0E4)
 I (..\Drivers\STM32H5xx_HAL_Driver\Inc\stm32h5xx_hal_pcd_ex.h)(0x6985D0E5)
 I (..\Drivers\STM32H5xx_HAL_Driver\Inc\stm32h5xx_hal_exti.h)(0x6985D0E5)
-I (..\Drivers\BSP\STM32H5xx_Nucleo\stm32h5xx_nucleo.h)(0x6985D0E3)
-I (..\Core\Inc\stm32h5xx_nucleo_conf.h)(0x6985B9E6)
-I (..\Drivers\BSP\STM32H5xx_Nucleo\stm32h5xx_nucleo_errno.h)(0x6985D0E3)
 I (..\Middlewares\Third_Party\TinyUSB\src\tusb.h)(0x698F0681)
 I (..\Middlewares\Third_Party\TinyUSB\src\common\tusb_common.h)(0x698F0681)
 I (..\Middlewares\Third_Party\TinyUSB\src\tusb_option.h)(0x698F0681)
@@ -174,9 +165,9 @@ I (..\Middlewares\Third_Party\TinyUSB\src\device\usbd.h)(0x698F0681)
 I (..\Middlewares\Third_Party\TinyUSB\src\class\midi\midi_device.h)(0x698F0681)
 I (..\Middlewares\Third_Party\TinyUSB\src\class\audio\audio.h)(0x698F0681)
 I (..\Middlewares\Third_Party\TinyUSB\src\class\midi\midi.h)(0x698F0681)
-I (..\Core\Inc\mcp23s17.h)(0x699F2863)
-F (../Core/Src/stm32h5xx_it.c)(0x698E20EA)(-xc -std=c99 --target=arm-arm-none-eabi -mcpu=cortex-m33+nodsp -mfpu=fpv5-sp-d16 -mfloat-abi=hard -c-fno-rtti -funsigned-char -fshort-enums -fshort-wchar-gdwarf-4 -O3 -ffunction-sections -Wno-packed -Wno-missing-variable-declarations -Wno-missing-prototypes -Wno-missing-noreturn -Wno-sign-conversion -Wno-nonportable-include-path -Wno-reserved-id-macro -Wno-unused-macros -Wno-documentation-unknown-command -Wno-documentation -Wno-license-management -Wno-parentheses-equality -Wno-reserved-identifier -I ../Core/Inc -I ../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I ../Middlewares/ST/STM32_USB_Device_Library/Class/MIDI/Inc -I ../Drivers/STM32H5xx_HAL_Driver/Inc -I ../Drivers/STM32H5xx_HAL_Driver/Inc/Legacy -I ../Drivers/BSP/STM32H5xx_Nucleo -I ../Drivers/CMSIS/Device/ST/STM32H5xx/Include -I ../Drivers/CMSIS/Include -I ../Middlewares/Third_Party/TinyUSB/src -I ../Middlewares/Third_Party/TinyUSB/src/device -I ../Middlewares/Third_Party/TinyUSB/src/class/midi -I ../Middlewares/Third_Party/TinyUSB/src/class/audio -I ../Middlewares/Third_Party/TinyUSB/src/common -I ../Middlewares/Third_Party/TinyUSB/src/osal -I ../Middlewares/Third_Party/TinyUSB/hw/bsp -I ../Middlewares/Third_Party/TinyUSB/src/portable/synopsys/dwc2-I./RTE/_MIDI-IC:/Users/kobed/AppData/Local/arm/packs/ARM/CMSIS/6.3.0/CMSIS/Core/Include-D__UVISION_VERSION="541" -DSTM32H533xx -D_RTE_ -DUSE_NUCLEO_64 -DUSE_HAL_DRIVER -DSTM32H533xx-o midi/stm32h5xx_it.o -MMD)
-I (..\Core\Inc\main.h)(0x699F2EC2)
+I (..\Core\Inc\mcp23s17.h)(0x69A16102)
+F (../Core/Src/stm32h5xx_it.c)(0x69A1628D)(-xc -std=c99 --target=arm-arm-none-eabi -mcpu=cortex-m33+nodsp -mfpu=fpv5-sp-d16 -mfloat-abi=hard -c-fno-rtti -funsigned-char -fshort-enums -fshort-wchar-gdwarf-4 -O3 -ffunction-sections -Wno-packed -Wno-missing-variable-declarations -Wno-missing-prototypes -Wno-missing-noreturn -Wno-sign-conversion -Wno-nonportable-include-path -Wno-reserved-id-macro -Wno-unused-macros -Wno-documentation-unknown-command -Wno-documentation -Wno-license-management -Wno-parentheses-equality -Wno-reserved-identifier -I ../Core/Inc -I ../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I ../Middlewares/ST/STM32_USB_Device_Library/Class/MIDI/Inc -I ../Drivers/STM32H5xx_HAL_Driver/Inc -I ../Drivers/STM32H5xx_HAL_Driver/Inc/Legacy -I ../Drivers/BSP/STM32H5xx_Nucleo -I ../Drivers/CMSIS/Device/ST/STM32H5xx/Include -I ../Drivers/CMSIS/Include -I ../Middlewares/Third_Party/TinyUSB/src -I ../Middlewares/Third_Party/TinyUSB/src/device -I ../Middlewares/Third_Party/TinyUSB/src/class/midi -I ../Middlewares/Third_Party/TinyUSB/src/class/audio -I ../Middlewares/Third_Party/TinyUSB/src/common -I ../Middlewares/Third_Party/TinyUSB/src/osal -I ../Middlewares/Third_Party/TinyUSB/hw/bsp -I ../Middlewares/Third_Party/TinyUSB/src/portable/synopsys/dwc2-I./RTE/_MIDI-IC:/Users/kobed/AppData/Local/arm/packs/ARM/CMSIS/6.3.0/CMSIS/Core/Include-D__UVISION_VERSION="541" -DSTM32H533xx -D_RTE_ -DUSE_NUCLEO_64 -DUSE_HAL_DRIVER -DSTM32H533xx-o midi/stm32h5xx_it.o -MMD)
+I (..\Core\Inc\main.h)(0x69A16276)
 I (..\Drivers\STM32H5xx_HAL_Driver\Inc\stm32h5xx_hal.h)(0x6985D0E5)
 I (..\Core\Inc\stm32h5xx_hal_conf.h)(0x698EEABA)
 I (..\Drivers\STM32H5xx_HAL_Driver\Inc\stm32h5xx_hal_rcc.h)(0x6985D0E5)
@@ -204,9 +195,6 @@ I (..\Drivers\STM32H5xx_HAL_Driver\Inc\stm32h5xx_hal_pcd.h)(0x6985D0E5)
 I (..\Drivers\STM32H5xx_HAL_Driver\Inc\stm32h5xx_ll_usb.h)(0x6985D0E4)
 I (..\Drivers\STM32H5xx_HAL_Driver\Inc\stm32h5xx_hal_pcd_ex.h)(0x6985D0E5)
 I (..\Drivers\STM32H5xx_HAL_Driver\Inc\stm32h5xx_hal_exti.h)(0x6985D0E5)
-I (..\Drivers\BSP\STM32H5xx_Nucleo\stm32h5xx_nucleo.h)(0x6985D0E3)
-I (..\Core\Inc\stm32h5xx_nucleo_conf.h)(0x6985B9E6)
-I (..\Drivers\BSP\STM32H5xx_Nucleo\stm32h5xx_nucleo_errno.h)(0x6985D0E3)
 I (..\Core\Inc\stm32h5xx_it.h)(0x6985B9E6)
 I (..\Middlewares\Third_Party\TinyUSB\src\tusb.h)(0x698F0681)
 I (..\Middlewares\Third_Party\TinyUSB\src\common\tusb_common.h)(0x698F0681)
@@ -225,7 +213,7 @@ I (..\Middlewares\Third_Party\TinyUSB\src\class\midi\midi_device.h)(0x698F0681)
 I (..\Middlewares\Third_Party\TinyUSB\src\class\audio\audio.h)(0x698F0681)
 I (..\Middlewares\Third_Party\TinyUSB\src\class\midi\midi.h)(0x698F0681)
 F (../Core/Src/stm32h5xx_hal_msp.c)(0x698EFB97)(-xc -std=c99 --target=arm-arm-none-eabi -mcpu=cortex-m33+nodsp -mfpu=fpv5-sp-d16 -mfloat-abi=hard -c-fno-rtti -funsigned-char -fshort-enums -fshort-wchar-gdwarf-4 -O3 -ffunction-sections -Wno-packed -Wno-missing-variable-declarations -Wno-missing-prototypes -Wno-missing-noreturn -Wno-sign-conversion -Wno-nonportable-include-path -Wno-reserved-id-macro -Wno-unused-macros -Wno-documentation-unknown-command -Wno-documentation -Wno-license-management -Wno-parentheses-equality -Wno-reserved-identifier -I ../Core/Inc -I ../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I ../Middlewares/ST/STM32_USB_Device_Library/Class/MIDI/Inc -I ../Drivers/STM32H5xx_HAL_Driver/Inc -I ../Drivers/STM32H5xx_HAL_Driver/Inc/Legacy -I ../Drivers/BSP/STM32H5xx_Nucleo -I ../Drivers/CMSIS/Device/ST/STM32H5xx/Include -I ../Drivers/CMSIS/Include -I ../Middlewares/Third_Party/TinyUSB/src -I ../Middlewares/Third_Party/TinyUSB/src/device -I ../Middlewares/Third_Party/TinyUSB/src/class/midi -I ../Middlewares/Third_Party/TinyUSB/src/class/audio -I ../Middlewares/Third_Party/TinyUSB/src/common -I ../Middlewares/Third_Party/TinyUSB/src/osal -I ../Middlewares/Third_Party/TinyUSB/hw/bsp -I ../Middlewares/Third_Party/TinyUSB/src/portable/synopsys/dwc2-I./RTE/_MIDI-IC:/Users/kobed/AppData/Local/arm/packs/ARM/CMSIS/6.3.0/CMSIS/Core/Include-D__UVISION_VERSION="541" -DSTM32H533xx -D_RTE_ -DUSE_NUCLEO_64 -DUSE_HAL_DRIVER -DSTM32H533xx-o midi/stm32h5xx_hal_msp.o -MMD)
-I (..\Core\Inc\main.h)(0x699F2EC2)
+I (..\Core\Inc\main.h)(0x69A16276)
 I (..\Drivers\STM32H5xx_HAL_Driver\Inc\stm32h5xx_hal.h)(0x6985D0E5)
 I (..\Core\Inc\stm32h5xx_hal_conf.h)(0x698EEABA)
 I (..\Drivers\STM32H5xx_HAL_Driver\Inc\stm32h5xx_hal_rcc.h)(0x6985D0E5)
@@ -253,12 +241,9 @@ I (..\Drivers\STM32H5xx_HAL_Driver\Inc\stm32h5xx_hal_pcd.h)(0x6985D0E5)
 I (..\Drivers\STM32H5xx_HAL_Driver\Inc\stm32h5xx_ll_usb.h)(0x6985D0E4)
 I (..\Drivers\STM32H5xx_HAL_Driver\Inc\stm32h5xx_hal_pcd_ex.h)(0x6985D0E5)
 I (..\Drivers\STM32H5xx_HAL_Driver\Inc\stm32h5xx_hal_exti.h)(0x6985D0E5)
-I (..\Drivers\BSP\STM32H5xx_Nucleo\stm32h5xx_nucleo.h)(0x6985D0E3)
-I (..\Core\Inc\stm32h5xx_nucleo_conf.h)(0x6985B9E6)
-I (..\Drivers\BSP\STM32H5xx_Nucleo\stm32h5xx_nucleo_errno.h)(0x6985D0E3)
 F (../Drivers/BSP/STM32H5xx_Nucleo/stm32h5xx_nucleo.c)(0x6985D0E3)(-xc -std=c99 --target=arm-arm-none-eabi -mcpu=cortex-m33+nodsp -mfpu=fpv5-sp-d16 -mfloat-abi=hard -c-fno-rtti -funsigned-char -fshort-enums -fshort-wchar-gdwarf-4 -O3 -ffunction-sections -Wno-packed -Wno-missing-variable-declarations -Wno-missing-prototypes -Wno-missing-noreturn -Wno-sign-conversion -Wno-nonportable-include-path -Wno-reserved-id-macro -Wno-unused-macros -Wno-documentation-unknown-command -Wno-documentation -Wno-license-management -Wno-parentheses-equality -Wno-reserved-identifier -I ../Core/Inc -I ../Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I ../Middlewares/ST/STM32_USB_Device_Library/Class/MIDI/Inc -I ../Drivers/STM32H5xx_HAL_Driver/Inc -I ../Drivers/STM32H5xx_HAL_Driver/Inc/Legacy -I ../Drivers/BSP/STM32H5xx_Nucleo -I ../Drivers/CMSIS/Device/ST/STM32H5xx/Include -I ../Drivers/CMSIS/Include -I ../Middlewares/Third_Party/TinyUSB/src -I ../Middlewares/Third_Party/TinyUSB/src/device -I ../Middlewares/Third_Party/TinyUSB/src/class/midi -I ../Middlewares/Third_Party/TinyUSB/src/class/audio -I ../Middlewares/Third_Party/TinyUSB/src/common -I ../Middlewares/Third_Party/TinyUSB/src/osal -I ../Middlewares/Third_Party/TinyUSB/hw/bsp -I ../Middlewares/Third_Party/TinyUSB/src/portable/synopsys/dwc2-I./RTE/_MIDI-IC:/Users/kobed/AppData/Local/arm/packs/ARM/CMSIS/6.3.0/CMSIS/Core/Include-D__UVISION_VERSION="541" -DSTM32H533xx -D_RTE_ -DUSE_NUCLEO_64 -DUSE_HAL_DRIVER -DSTM32H533xx-o midi/stm32h5xx_nucleo.o -MMD)
 I (..\Drivers\BSP\STM32H5xx_Nucleo\stm32h5xx_nucleo.h)(0x6985D0E3)
-I (..\Core\Inc\stm32h5xx_nucleo_conf.h)(0x6985B9E6)
+I (..\Core\Inc\stm32h5xx_nucleo_conf.h)(0x69A16280)
 I (..\Drivers\STM32H5xx_HAL_Driver\Inc\stm32h5xx_hal.h)(0x6985D0E5)
 I (..\Core\Inc\stm32h5xx_hal_conf.h)(0x698EEABA)
 I (..\Drivers\STM32H5xx_HAL_Driver\Inc\stm32h5xx_hal_rcc.h)(0x6985D0E5)

@@ -42,6 +42,4 @@ midi/tusb_port.o: ..\Core\Src\tusb_port.c \
   ..\Middlewares\Third_Party\TinyUSB\src\class\midi\midi_device.h \
   ..\Middlewares\Third_Party\TinyUSB\src\class\audio\audio.h \
   ..\Middlewares\Third_Party\TinyUSB\src\class\midi\midi.h \
-  ..\Core\Inc\main.h ..\Drivers\BSP\STM32H5xx_Nucleo\stm32h5xx_nucleo.h \
-  ..\Core\Inc\stm32h5xx_nucleo_conf.h \
-  ..\Drivers\BSP\STM32H5xx_Nucleo\stm32h5xx_nucleo_errno.h
+  ..\Core\Inc\main.h

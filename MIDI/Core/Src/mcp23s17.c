@@ -174,25 +174,3 @@ uint8_t MCP_IsReady(void)
 {
     return s_mcp_ready;
 }
-
-uint8_t MCP_TestLink(void)
-{
-    if (s_mcp_ready == 0)
-    {
-        return 0;
-    }
-
-    if (!mcp_probe_cs(s_active_cs.port, s_active_cs.pin))
-    {
-        s_mcp_ready = 0;
-        return 0;
-    }
-
-    // Restore runtime matrix configuration after probe writes.
-    MCP_Write(MCP_IODIRA, 0xF0);
-    MCP_Write(MCP_IODIRB, 0x0F);
-    MCP_Write(MCP_GPPUB, 0x0F);
-    MCP_Write(MCP_GPIOA, 0x0F);
-
-    return 1;
-}

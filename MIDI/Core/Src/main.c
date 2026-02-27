@@ -39,15 +39,6 @@
 #define MATRIX_DEBOUNCE_SCANS  8u
 #define MIDI_BASE_NOTE         60u
 #define MIDI_NOTE_VELOCITY     127u
-#define MIDI_DIAGNOSTICS       0u
-#define SPI_DIAG_PERIOD_MS     1000u
-#define SPI_DIAG_NOTE_OK       108u
-#define SPI_DIAG_NOTE_FAIL     109u
-#define MIDI_DIAG_CC_PERIOD_MS 1000u
-#define MIDI_DIAG_CC_HEARTBEAT 100u
-#define MIDI_DIAG_CC_MCP_READY 101u
-#define MIDI_DIAG_CC_IODIRB    102u
-#define MIDI_DIAG_CC_GPIOB     103u
 
 /* USER CODE END PD */
 
@@ -57,8 +48,6 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
-
-COM_InitTypeDef BspCOMInit;
 
 SPI_HandleTypeDef hspi1;
 
@@ -71,7 +60,6 @@ PCD_HandleTypeDef hpcd_USB_DRD_FS;
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
-static void MX_USB_PCD_Init(void);
 static void MX_SPI1_Init(void);
 /* USER CODE BEGIN PFP */
 
@@ -156,22 +144,6 @@ static void Matrix_UpdateDebounce(uint16_t raw_state, uint16_t *stable_state, ui
   }
 }
 
-#if MIDI_DIAGNOSTICS
-static void Midi_SendPulse(uint8_t note, uint8_t velocity)
-{
-  uint8_t msg_on[3] = {0x90, note, velocity};
-  uint8_t msg_off[3] = {0x80, note, 0};
-  tud_midi_stream_write(0, msg_on, 3);
-  tud_midi_stream_write(0, msg_off, 3);
-}
-
-static void Midi_SendCC(uint8_t cc, uint8_t value)
-{
-  uint8_t msg_cc[3] = {0xB0, cc, value};
-  tud_midi_stream_write(0, msg_cc, 3);
-}
-#endif
-
 /**
   * @brief  The application entry point.
   * @retval int
@@ -201,10 +173,6 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  // MX_USB_PCD_Init(); // TinyUSB has its own driver, avoid conflict
-  // MX_SPI1_Init();    // Moved to USER CODE BEGIN 2 to ensure USB is first
-  /* USER CODE BEGIN 2 */
-
   /* USER CODE BEGIN 2 */
 
   // 1. Configure GPIOs (PA11=DM, PA12=DP)
@@ -268,20 +236,6 @@ int main(void)
 
   /* USER CODE END 2 */
 
-  /* Initialize USER push-button, will be used to trigger an interrupt each time it's pressed.*/
-  BSP_PB_Init(BUTTON_USER, BUTTON_MODE_EXTI);
-
-  /* Initialize COM1 port (115200, 8 bits (7-bit data + 1 stop bit), no parity */
-  BspCOMInit.BaudRate   = 115200;
-  BspCOMInit.WordLength = COM_WORDLENGTH_8B;
-  BspCOMInit.StopBits   = COM_STOPBITS_1;
-  BspCOMInit.Parity     = COM_PARITY_NONE;
-  BspCOMInit.HwFlowCtl  = COM_HWCONTROL_NONE;
-  if (BSP_COM_Init(COM1, &BspCOMInit) != BSP_ERROR_NONE)
-  {
-    Error_Handler();
-  }
-
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   
@@ -289,38 +243,14 @@ int main(void)
   uint16_t stable_keys = 0;
   uint8_t debounce_count[MATRIX_KEYS] = {0};
   uint8_t mcp_ready = MCP_IsReady();
-#if MIDI_DIAGNOSTICS
-  uint8_t spi_link_state = 2u; // 0 = fail, 1 = ok, 2 = unknown
-  uint8_t midi_heartbeat = 0u;
-#endif
   uint32_t last_scan_time = 0;
   uint32_t last_mcp_retry_time = 0;
-#if MIDI_DIAGNOSTICS
-  uint32_t last_spi_diag_time = 0;
-  uint32_t last_midi_diag_time = 0;
-#endif
   
   while (1)
   {
     /* TinyUSB device task */
     tud_task();
     uint32_t now = HAL_GetTick();
-
-    // Continuous USB-MIDI telemetry to verify outgoing MIDI path.
-#if MIDI_DIAGNOSTICS
-    if (tud_mounted() && ((now - last_midi_diag_time) >= MIDI_DIAG_CC_PERIOD_MS))
-    {
-      last_midi_diag_time = now;
-      midi_heartbeat ^= 1u;
-      Midi_SendCC(MIDI_DIAG_CC_HEARTBEAT, midi_heartbeat ? 127u : 0u);
-      Midi_SendCC(MIDI_DIAG_CC_MCP_READY, mcp_ready ? 127u : 0u);
-      if (mcp_ready)
-      {
-        Midi_SendCC(MIDI_DIAG_CC_IODIRB, MCP_Read(MCP_IODIRB));
-        Midi_SendCC(MIDI_DIAG_CC_GPIOB, (uint8_t)(MCP_Read(MCP_GPIOB) & 0x0Fu));
-      }
-    }
-#endif
     
     // Retry MCP detection if wiring is fixed after boot.
     if (!mcp_ready)
@@ -331,21 +261,6 @@ int main(void)
         MCP_Init();
         mcp_ready = MCP_IsReady();
 
-        if (tud_mounted())
-        {
-#if MIDI_DIAGNOSTICS
-          if (mcp_ready && (spi_link_state != 1u))
-          {
-            Midi_SendPulse(SPI_DIAG_NOTE_OK, 100);
-            spi_link_state = 1u;
-          }
-          else if (!mcp_ready && (spi_link_state != 0u))
-          {
-            Midi_SendPulse(SPI_DIAG_NOTE_FAIL, 100);
-            spi_link_state = 0u;
-          }
-#endif
-        }
       }
       continue;
     }
@@ -353,31 +268,6 @@ int main(void)
     // Matrix scan + debounce + edge detection
     if (tud_mounted())
     {
-#if MIDI_DIAGNOSTICS
-      if ((now - last_spi_diag_time) >= SPI_DIAG_PERIOD_MS)
-      {
-        last_spi_diag_time = now;
-        if (MCP_TestLink())
-        {
-          if (spi_link_state != 1u)
-          {
-            Midi_SendPulse(SPI_DIAG_NOTE_OK, 100);
-            spi_link_state = 1u;
-          }
-        }
-        else
-        {
-          mcp_ready = 0;
-          if (spi_link_state != 0u)
-          {
-            Midi_SendPulse(SPI_DIAG_NOTE_FAIL, 100);
-            spi_link_state = 0u;
-          }
-          continue;
-        }
-      }
-#endif
-
       if ((now - last_scan_time) >= MATRIX_SCAN_MS)
       {
         last_scan_time = now;
@@ -505,42 +395,6 @@ static void MX_SPI1_Init(void)
 }
 
 /**
-  * @brief USB Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_USB_PCD_Init(void)
-{
-
-  /* USER CODE BEGIN USB_Init 0 */
-
-  /* USER CODE END USB_Init 0 */
-
-  /* USER CODE BEGIN USB_Init 1 */
-
-  /* USER CODE END USB_Init 1 */
-  hpcd_USB_DRD_FS.Instance = USB_DRD_FS;
-  hpcd_USB_DRD_FS.Init.dev_endpoints = 8;
-  hpcd_USB_DRD_FS.Init.speed = USBD_FS_SPEED;
-  hpcd_USB_DRD_FS.Init.phy_itface = PCD_PHY_EMBEDDED;
-  hpcd_USB_DRD_FS.Init.Sof_enable = DISABLE;
-  hpcd_USB_DRD_FS.Init.low_power_enable = DISABLE;
-  hpcd_USB_DRD_FS.Init.lpm_enable = DISABLE;
-  hpcd_USB_DRD_FS.Init.battery_charging_enable = DISABLE;
-  hpcd_USB_DRD_FS.Init.vbus_sensing_enable = DISABLE;
-  hpcd_USB_DRD_FS.Init.bulk_doublebuffer_enable = DISABLE;
-  hpcd_USB_DRD_FS.Init.iso_singlebuffer_enable = DISABLE;
-  if (HAL_PCD_Init(&hpcd_USB_DRD_FS) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN USB_Init 2 */
-
-  /* USER CODE END USB_Init 2 */
-
-}
-
-/**
   * @brief GPIO Initialization Function
   * @param None
   * @retval None
@@ -567,12 +421,6 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : PC4 */
-  GPIO_InitStruct.Pin = GPIO_PIN_4;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
-
   /* USER CODE BEGIN MX_GPIO_Init_2 */
 
   /* USER CODE END MX_GPIO_Init_2 */
@@ -596,19 +444,3 @@ void Error_Handler(void)
   }
   /* USER CODE END Error_Handler_Debug */
 }
-#ifdef USE_FULL_ASSERT
-/**
-  * @brief  Reports the name of the source file and the source line number
-  *         where the assert_param error has occurred.
-  * @param  file: pointer to the source file name
-  * @param  line: assert_param error line source number
-  * @retval None
-  */
-void assert_failed(uint8_t *file, uint32_t line)
-{
-  /* USER CODE BEGIN 6 */
-  /* User can add his own implementation to report the file name and line number,
-     ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
-  /* USER CODE END 6 */
-}
-#endif /* USE_FULL_ASSERT */

@@ -34,6 +34,5 @@ void MCP_Init(void);
 void MCP_Write(uint8_t reg, uint8_t value);
 uint8_t MCP_Read(uint8_t reg);
 uint8_t MCP_IsReady(void);
-uint8_t MCP_TestLink(void);
 
 #endif
