@@ -1,20 +1,20 @@
 /* USER CODE BEGIN Header */
 /**
-  ******************************************************************************
-  * @file           : main.c
-  * @brief          : Main program body
-  ******************************************************************************
-  * @attention
-  *
-  * Copyright (c) 2026 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
-  ******************************************************************************
-  */
+ ******************************************************************************
+ * @file           : main.c
+ * @brief          : Main program body
+ ******************************************************************************
+ * @attention
+ *
+ * Copyright (c) 2026 STMicroelectronics.
+ * All rights reserved.
+ *
+ * This software is licensed under terms that can be found in the LICENSE file
+ * in the root directory of this software component.
+ * If no LICENSE file comes with this software, it is provided AS-IS.
+ *
+ ******************************************************************************
+ */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
@@ -32,13 +32,13 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define MATRIX_ROWS            4u
-#define MATRIX_COLS            4u
-#define MATRIX_KEYS            (MATRIX_ROWS * MATRIX_COLS)
-#define MATRIX_SCAN_MS         2u
-#define MATRIX_DEBOUNCE_SCANS  8u
-#define MIDI_BASE_NOTE         60u
-#define MIDI_NOTE_VELOCITY     127u
+#define MATRIX_ROWS 4u
+#define MATRIX_COLS 4u
+#define MATRIX_KEYS (MATRIX_ROWS * MATRIX_COLS)
+#define MATRIX_SCAN_MS 2u
+#define MATRIX_DEBOUNCE_SCANS 8u
+#define MIDI_BASE_NOTE 60u
+#define MIDI_NOTE_VELOCITY 127u
 
 /* USER CODE END PD */
 
@@ -77,7 +77,10 @@ static uint16_t Matrix_ScanRaw(void)
     MCP_Write(MCP_GPIOA, col_outputs[col]);
 
     // Short settle delay after switching active column.
-    for (volatile uint32_t d = 0; d < 120u; d++) { __NOP(); }
+    for (volatile uint32_t d = 0; d < 120u; d++)
+    {
+      __NOP();
+    }
 
     // Triple-sample rows and use bitwise majority vote to reject glitches.
     // GPB0..GPB3 are row inputs with pull-ups: pressed = 0.
@@ -145,9 +148,9 @@ static void Matrix_UpdateDebounce(uint16_t raw_state, uint16_t *stable_state, ui
 }
 
 /**
-  * @brief  The application entry point.
-  * @retval int
-  */
+ * @brief  The application entry point.
+ * @retval int
+ */
 int main(void)
 {
 
@@ -178,7 +181,7 @@ int main(void)
   // 1. Configure GPIOs (PA11=DM, PA12=DP)
   GPIO_InitTypeDef GPIO_InitStruct = {0};
   __HAL_RCC_GPIOA_CLK_ENABLE();
-  
+
   GPIO_InitStruct.Pin = GPIO_PIN_11 | GPIO_PIN_12;
   GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
@@ -197,10 +200,10 @@ int main(void)
   {
     Error_Handler();
   }
-  
+
   // 3. Enable USB Clock
   __HAL_RCC_USB_CLK_ENABLE();
-  
+
   // 4. Set Interrupt Priority
   HAL_NVIC_SetPriority(USB_DRD_FS_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(USB_DRD_FS_IRQn);
@@ -224,13 +227,13 @@ int main(void)
 
   /* Initialize TinyUSB (handles USB peripheral initialization) */
   tusb_init();
-  
+
   // Wait for 100ms for stable power-up
   HAL_Delay(100);
-  
+
   // Initialize SPI1 explicitly afterwards
   MX_SPI1_Init();
-  
+
   // Initialize MCP23S17 (SPI IO Expander)
   MCP_Init();
 
@@ -238,20 +241,20 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  
+
   uint16_t raw_keys = 0;
   uint16_t stable_keys = 0;
   uint8_t debounce_count[MATRIX_KEYS] = {0};
   uint8_t mcp_ready = MCP_IsReady();
   uint32_t last_scan_time = 0;
   uint32_t last_mcp_retry_time = 0;
-  
+
   while (1)
   {
     /* TinyUSB device task */
     tud_task();
     uint32_t now = HAL_GetTick();
-    
+
     // Retry MCP detection if wiring is fixed after boot.
     if (!mcp_ready)
     {
@@ -260,7 +263,6 @@ int main(void)
         last_mcp_retry_time = now;
         MCP_Init();
         mcp_ready = MCP_IsReady();
-
       }
       continue;
     }
@@ -284,25 +286,26 @@ int main(void)
 }
 
 /**
-  * @brief System Clock Configuration
-  * @retval None
-  */
+ * @brief System Clock Configuration
+ * @retval None
+ */
 void SystemClock_Config(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
   /** Configure the main internal regulator output voltage
-  */
+   */
   __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE3);
 
-  while(!__HAL_PWR_GET_FLAG(PWR_FLAG_VOSRDY)) {}
+  while (!__HAL_PWR_GET_FLAG(PWR_FLAG_VOSRDY))
+  {
+  }
 
   /** Initializes the RCC Oscillators according to the specified parameters
-  * in the RCC_OscInitTypeDef structure.
-  */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI48|RCC_OSCILLATORTYPE_HSI
-                              |RCC_OSCILLATORTYPE_CSI;
+   * in the RCC_OscInitTypeDef structure.
+   */
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI48 | RCC_OSCILLATORTYPE_HSI | RCC_OSCILLATORTYPE_CSI;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
   RCC_OscInitStruct.HSIDiv = RCC_HSI_DIV2;
   RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
@@ -325,10 +328,8 @@ void SystemClock_Config(void)
   }
 
   /** Initializes the CPU, AHB and APB buses clocks
-  */
-  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
-                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2
-                              |RCC_CLOCKTYPE_PCLK3;
+   */
+  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2 | RCC_CLOCKTYPE_PCLK3;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_HSI;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
@@ -341,15 +342,15 @@ void SystemClock_Config(void)
   }
 
   /** Configure the programming delay
-  */
+   */
   __HAL_FLASH_SET_PROGRAM_DELAY(FLASH_PROGRAMMING_DELAY_0);
 }
 
 /**
-  * @brief SPI1 Initialization Function
-  * @param None
-  * @retval None
-  */
+ * @brief SPI1 Initialization Function
+ * @param None
+ * @retval None
+ */
 static void MX_SPI1_Init(void)
 {
 
@@ -391,14 +392,13 @@ static void MX_SPI1_Init(void)
   /* USER CODE BEGIN SPI1_Init 2 */
 
   /* USER CODE END SPI1_Init 2 */
-
 }
 
 /**
-  * @brief GPIO Initialization Function
-  * @param None
-  * @retval None
-  */
+ * @brief GPIO Initialization Function
+ * @param None
+ * @retval None
+ */
 static void MX_GPIO_Init(void)
 {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
@@ -431,9 +431,9 @@ static void MX_GPIO_Init(void)
 /* USER CODE END 4 */
 
 /**
-  * @brief  This function is executed in case of error occurrence.
-  * @retval None
-  */
+ * @brief  This function is executed in case of error occurrence.
+ * @retval None
+ */
 void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
