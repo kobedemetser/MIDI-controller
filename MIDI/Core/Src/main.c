@@ -39,8 +39,9 @@
 #define MATRIX_DEBOUNCE_SCANS 8u
 #define MIDI_BASE_NOTE 60u
 #define MIDI_NOTE_VELOCITY 127u
+#define NUM_POTS 2u
 #define POT_HYSTERESIS 2u
-#define MIDI_CC_POT1 16u
+#define MIDI_CC_START 16u
 
 /* USER CODE END PD */
 
@@ -64,8 +65,8 @@ TIM_HandleTypeDef htim6;
 PCD_HandleTypeDef hpcd_USB_DRD_FS;
 
 /* USER CODE BEGIN PV */
-static volatile uint8_t adc_value = 0u;
-static uint8_t last_midi_value = 0u;
+static volatile uint8_t adc_buffer[NUM_POTS] = {0u};
+static uint8_t last_midi_values[NUM_POTS] = {0u};
 
 /* USER CODE END PV */
 
@@ -79,7 +80,7 @@ static void MX_TIM6_Init(void);
 static void MX_USB_PCD_Init(void);
 /* USER CODE BEGIN PFP */
 static void ADC_Start(void);
-static void ProcessPotentiometer(void);
+static void ProcessPotentiometers(void);
 static void Matrix_SendNoteMessage(uint8_t note, uint8_t velocity, uint8_t pressed);
 static uint16_t Matrix_ScanRaw(void);
 static void Matrix_UpdateDebounce(uint16_t raw_keys, uint16_t *stable_keys, uint8_t debounce_count[MATRIX_KEYS]);
@@ -95,31 +96,34 @@ static void ADC_Start(void)
     Error_Handler();
   }
 
-  if (HAL_ADC_Start_DMA(&hadc1, (uint32_t *)&adc_value, 1) != HAL_OK)
+  if (HAL_ADC_Start_DMA(&hadc1, (uint32_t *)adc_buffer, NUM_POTS) != HAL_OK)
   {
     Error_Handler();
   }
 }
 
-static void ProcessPotentiometer(void)
+static void ProcessPotentiometers(void)
 {
-  uint8_t new_value = adc_value >> 1;
-  int16_t diff = (int16_t)new_value - (int16_t)last_midi_value;
-
-  if (diff < 0)
+  for (uint8_t i = 0u; i < NUM_POTS; i++)
   {
-    diff = -diff;
-  }
+    uint8_t new_value = adc_buffer[i] >> 1;
+    int16_t diff = (int16_t)new_value - (int16_t)last_midi_values[i];
 
-  if ((uint16_t)diff >= POT_HYSTERESIS)
-  {
-    if (tud_mounted())
+    if (diff < 0)
     {
-      uint8_t msg[3] = {0xB0u, MIDI_CC_POT1, new_value};
-      tud_midi_stream_write(0, msg, 3);
+      diff = -diff;
     }
 
-    last_midi_value = new_value;
+    if ((uint16_t)diff >= POT_HYSTERESIS)
+    {
+      if (tud_mounted())
+      {
+        uint8_t msg[3] = {0xB0u, (uint8_t)(MIDI_CC_START + i), new_value};
+        tud_midi_stream_write(0, msg, 3);
+      }
+
+      last_midi_values[i] = new_value;
+    }
   }
 }
 
@@ -356,7 +360,7 @@ int main(void)
       }
     }
 
-    ProcessPotentiometer();
+    ProcessPotentiometers();
 
     // Matrix scan + debounce + edge detection
     if (mcp_ready && tud_mounted())
@@ -462,11 +466,11 @@ static void MX_ADC1_Init(void)
   hadc1.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV1;
   hadc1.Init.Resolution = ADC_RESOLUTION_8B;
   hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
-  hadc1.Init.ScanConvMode = ADC_SCAN_DISABLE;
+  hadc1.Init.ScanConvMode = ADC_SCAN_ENABLE;
   hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
   hadc1.Init.LowPowerAutoWait = DISABLE;
   hadc1.Init.ContinuousConvMode = DISABLE;
-  hadc1.Init.NbrOfConversion = 1;
+  hadc1.Init.NbrOfConversion = 2;
   hadc1.Init.DiscontinuousConvMode = DISABLE;
   hadc1.Init.ExternalTrigConv = ADC_EXTERNALTRIG_T6_TRGO;
   hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_RISING;
@@ -487,6 +491,15 @@ static void MX_ADC1_Init(void)
   sConfig.SingleDiff = ADC_SINGLE_ENDED;
   sConfig.OffsetNumber = ADC_OFFSET_NONE;
   sConfig.Offset = 0;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Regular Channel
+  */
+  sConfig.Channel = ADC_CHANNEL_1;
+  sConfig.Rank = ADC_REGULAR_RANK_2;
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
   {
     Error_Handler();
