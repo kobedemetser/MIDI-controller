@@ -1,4 +1,5 @@
-midi/main.o: ..\Core\Src\main.c ..\Core\Inc\main.h \
+midi/stm32h5xx_hal_tim.o: \
+  ..\Drivers\STM32H5xx_HAL_Driver\Src\stm32h5xx_hal_tim.c \
   ..\Drivers\STM32H5xx_HAL_Driver\Inc\stm32h5xx_hal.h \
   ..\Core\Inc\stm32h5xx_hal_conf.h \
   ..\Drivers\STM32H5xx_HAL_Driver\Inc\stm32h5xx_hal_rcc.h \
@@ -30,24 +31,4 @@ midi/main.o: ..\Core\Src\main.c ..\Core\Inc\main.h \
   ..\Drivers\STM32H5xx_HAL_Driver\Inc\stm32h5xx_hal_pcd.h \
   ..\Drivers\STM32H5xx_HAL_Driver\Inc\stm32h5xx_ll_usb.h \
   ..\Drivers\STM32H5xx_HAL_Driver\Inc\stm32h5xx_hal_pcd_ex.h \
-  ..\Drivers\STM32H5xx_HAL_Driver\Inc\stm32h5xx_hal_exti.h \
-  ..\Drivers\BSP\STM32H5xx_Nucleo\stm32h5xx_nucleo.h \
-  ..\Core\Inc\stm32h5xx_nucleo_conf.h \
-  ..\Drivers\BSP\STM32H5xx_Nucleo\stm32h5xx_nucleo_errno.h \
-  ..\Middlewares\Third_Party\TinyUSB\src\tusb.h \
-  ..\Middlewares\Third_Party\TinyUSB\src\common\tusb_common.h \
-  ..\Middlewares\Third_Party\TinyUSB\src\tusb_option.h \
-  ..\Middlewares\Third_Party\TinyUSB\src\common\tusb_compiler.h \
-  ..\Core\Inc\tusb_config.h \
-  ..\Middlewares\Third_Party\TinyUSB\src\common\tusb_mcu.h \
-  ..\Middlewares\Third_Party\TinyUSB\src\common\tusb_verify.h \
-  ..\Middlewares\Third_Party\TinyUSB\src\common\tusb_types.h \
-  ..\Middlewares\Third_Party\TinyUSB\src\common\tusb_debug.h \
-  ..\Middlewares\Third_Party\TinyUSB\src\osal\osal.h \
-  ..\Middlewares\Third_Party\TinyUSB\src\osal\osal_none.h \
-  ..\Middlewares\Third_Party\TinyUSB\src\common\tusb_fifo.h \
-  ..\Middlewares\Third_Party\TinyUSB\src\device\usbd.h \
-  ..\Middlewares\Third_Party\TinyUSB\src\class\midi\midi_device.h \
-  ..\Middlewares\Third_Party\TinyUSB\src\class\audio\audio.h \
-  ..\Middlewares\Third_Party\TinyUSB\src\class\midi\midi.h \
-  ..\Core\Inc\mcp23s17.h
+  ..\Drivers\STM32H5xx_HAL_Driver\Inc\stm32h5xx_hal_exti.h

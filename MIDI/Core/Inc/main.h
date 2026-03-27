@@ -29,6 +29,9 @@ extern "C" {
 /* Includes ------------------------------------------------------------------*/
 #include "stm32h5xx_hal.h"
 
+#include "stm32h5xx_nucleo.h"
+#include <stdio.h>
+
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -65,10 +68,6 @@ void Error_Handler(void);
 #define JTDI_GPIO_Port GPIOA
 #define SWO_Pin GPIO_PIN_3
 #define SWO_GPIO_Port GPIOB
-
-/* MCP23S17 Chip Select (SPI1 NSS software managed) */
-#define MCP_CS_Pin GPIO_PIN_9
-#define MCP_CS_GPIO_Port GPIOC
 
 /* USER CODE BEGIN Private defines */
 

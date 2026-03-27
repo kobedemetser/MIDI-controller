@@ -4,6 +4,7 @@
  */
 
 #include "tusb.h"
+#include <string.h>
 
 //--------------------------------------------------------------------+
 // Device Descriptors
