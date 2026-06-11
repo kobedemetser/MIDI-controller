@@ -35,13 +35,42 @@
 #define MATRIX_ROWS 4u
 #define MATRIX_COLS 4u
 #define MATRIX_KEYS (MATRIX_ROWS * MATRIX_COLS)
+#define MATRIX_ROW_MASK ((uint8_t)((1u << MATRIX_ROWS) - 1u))
+#define MATRIX_COLUMN_MASK ((uint8_t)((1u << MATRIX_COLS) - 1u))
+#define MATRIX_PORTA_UNUSED_INPUT_MASK 0xF0u
+#define MATRIX_ALL_COLUMNS_INPUT_IODIR (MATRIX_PORTA_UNUSED_INPUT_MASK | MATRIX_COLUMN_MASK)
 #define MATRIX_SCAN_MS 2u
 #define MATRIX_DEBOUNCE_SCANS 8u
+#define MATRIX_IDLE_RAINBOW_DELAY_MS 3000u
+#define MATRIX_IDLE_RAINBOW_FRAME_MS 50u
 #define MIDI_BASE_NOTE 60u
 #define MIDI_NOTE_VELOCITY 127u
-#define NUM_POTS 2u
-#define POT_HYSTERESIS 2u
+#define NUM_POTS 8u
+/* ADC ranks are configured as IN0, IN1, IN5, IN8, IN9, IN10, IN11, IN12. */
+#define POT_PROCESS_MS 8u
+#define POT_STABLE_SCANS 3u
+#define POT_HYSTERESIS 3u
+#define POT_FAST_CHANGE_THRESHOLD 8u
+#define POT_EDGE_DEADBAND 4u
 #define MIDI_CC_START 16u
+#define MIDI_CC_MAX_VALUE 127u
+/* SK6812 mini-e RGB LED chain driven via TIM3 CH1 PWM + DMA.
+ * MCU runs at 32 MHz (HSI/2). TIM3 period = 39 → 32MHz/40 = 800 kHz (1.25 µs/bit).
+ * T0H = 10/40 = 0.3125 µs, T1H = 20/40 = 0.625 µs, reset = 200 slots = 250 µs. */
+#define SK6812_LED_COUNT        MATRIX_KEYS
+#define SK6812_BITS_PER_LED     24u                 /* GRB, 8 bits each, no white channel */
+#define SK6812_RESET_SLOTS      200u                /* 200 × 1.25 µs = 250 µs > 80 µs min */
+#define SK6812_PREAMBLE_SLOTS   1u                  /* absorbs the phantom CC1 trigger at timer start */
+#define SK6812_DMA_BUF_SIZE     (SK6812_PREAMBLE_SLOTS + (SK6812_LED_COUNT * SK6812_BITS_PER_LED) + SK6812_RESET_SLOTS)
+#define SK6812_DATA_Pin         GPIO_PIN_6
+#define SK6812_DATA_GPIO_Port   GPIOC
+#define SK6812_DATA_GPIO_AF     GPIO_AF2_TIM3
+#define SK6812_TIMER_PERIOD     39u
+#define SK6812_T0H              10u                 /* compare value for a 0-bit */
+#define SK6812_T1H              20u                 /* compare value for a 1-bit */
+#define SK6812_IDLE_BRIGHTNESS  28u                 /* lower current draw while all 16 LEDs are on */
+#define SK6812_IDLE_STEP        4u
+#define SK6812_BRIGHTNESS       40u                 /* 0–255, applies to all key colours */
 
 /* USER CODE END PD */
 
@@ -65,8 +94,20 @@ TIM_HandleTypeDef htim6;
 PCD_HandleTypeDef hpcd_USB_DRD_FS;
 
 /* USER CODE BEGIN PV */
+static TIM_HandleTypeDef htim3;
+DMA_HandleTypeDef handle_GPDMA1_Channel1;
 static volatile uint8_t adc_buffer[NUM_POTS] = {0u};
 static uint8_t last_midi_values[NUM_POTS] = {0u};
+static uint8_t pot_candidate_values[NUM_POTS] = {0u};
+static uint8_t pot_candidate_counts[NUM_POTS] = {0u};
+static uint8_t sk6812_led_rgb[SK6812_LED_COUNT][3] = {0u};
+static uint16_t sk6812_dma_buffer[SK6812_DMA_BUF_SIZE] = {0u};
+static volatile uint8_t sk6812_dma_busy = 0u;
+static uint16_t sk6812_last_key_mask = 0xFFFFu;
+static uint32_t sk6812_last_button_activity = 0u;
+static uint32_t sk6812_last_rainbow_frame = 0u;
+static uint8_t sk6812_rainbow_offset = 0u;
+static uint8_t sk6812_idle_rainbow_active = 0u;
 
 /* USER CODE END PV */
 
@@ -80,15 +121,290 @@ static void MX_TIM6_Init(void);
 static void MX_USB_PCD_Init(void);
 /* USER CODE BEGIN PFP */
 static void ADC_Start(void);
+static uint8_t Pot_NormalizeMidiValue(uint8_t adc_value);
 static void ProcessPotentiometers(void);
 static void Matrix_SendNoteMessage(uint8_t note, uint8_t velocity, uint8_t pressed);
 static uint16_t Matrix_ScanRaw(void);
 static void Matrix_UpdateDebounce(uint16_t raw_keys, uint16_t *stable_keys, uint8_t debounce_count[MATRIX_KEYS]);
+static void MX_TIM3_Init(void);
+static void SK6812_SetLedColor(uint8_t led_index, uint8_t r, uint8_t g, uint8_t b);
+static HAL_StatusTypeDef SK6812_Show(void);
+static void SK6812_FillDmaBuffer(void);
+static void SK6812_DataPinAsTimer(void);
+static void SK6812_DataPinAsGpioLow(void);
+static void SK6812_Clear(void);
+static void SK6812_ColorWheel(uint8_t position, uint8_t *r, uint8_t *g, uint8_t *b, uint8_t brightness);
+static void SK6812_SetPressedKeyColors(uint16_t key_mask);
+static void SK6812_SetIdleRainbowFrame(uint8_t offset);
+static void SK6812_UpdateLeds(uint16_t key_mask, uint32_t now);
+void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+static void MX_TIM3_Init(void)
+{
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+  TIM_OC_InitTypeDef sConfigOC = {0};
+
+  htim3.Instance = TIM3;
+  htim3.Init.Prescaler = 0u;
+  htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim3.Init.Period = SK6812_TIMER_PERIOD;
+  htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+
+  if (HAL_TIM_PWM_Init(&htim3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim3, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  sConfigOC.OCMode = TIM_OCMODE_PWM1;
+  sConfigOC.Pulse = 0u;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+  if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  HAL_TIM_MspPostInit(&htim3);
+  SK6812_DataPinAsGpioLow();
+}
+
+static void SK6812_DataPinAsTimer(void)
+{
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
+
+  __HAL_RCC_GPIOC_CLK_ENABLE();
+
+  GPIO_InitStruct.Pin = SK6812_DATA_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+  GPIO_InitStruct.Alternate = SK6812_DATA_GPIO_AF;
+  HAL_GPIO_Init(SK6812_DATA_GPIO_Port, &GPIO_InitStruct);
+}
+
+static void SK6812_DataPinAsGpioLow(void)
+{
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
+
+  __HAL_RCC_GPIOC_CLK_ENABLE();
+  HAL_GPIO_WritePin(SK6812_DATA_GPIO_Port, SK6812_DATA_Pin, GPIO_PIN_RESET);
+
+  GPIO_InitStruct.Pin = SK6812_DATA_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(SK6812_DATA_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_WritePin(SK6812_DATA_GPIO_Port, SK6812_DATA_Pin, GPIO_PIN_RESET);
+}
+
+static void SK6812_SetLedColor(uint8_t led_index, uint8_t r, uint8_t g, uint8_t b)
+{
+  if (led_index >= SK6812_LED_COUNT)
+  {
+    return;
+  }
+
+  sk6812_led_rgb[led_index][0] = r;
+  sk6812_led_rgb[led_index][1] = g;
+  sk6812_led_rgb[led_index][2] = b;
+}
+
+static void SK6812_FillDmaBuffer(void)
+{
+  uint32_t dma_index = SK6812_PREAMBLE_SLOTS;  /* slot 0 stays 0 (preamble) */
+
+  for (uint32_t led = 0u; led < SK6812_LED_COUNT; led++)
+  {
+    uint8_t grb[3] =
+    {
+      sk6812_led_rgb[led][1],
+      sk6812_led_rgb[led][0],
+      sk6812_led_rgb[led][2]
+    };
+
+    for (uint32_t color = 0u; color < 3u; color++)
+    {
+      for (int32_t bit = 7; bit >= 0; bit--)
+      {
+        sk6812_dma_buffer[dma_index++] =
+          ((grb[color] & (uint8_t)(1u << bit)) != 0u) ? SK6812_T1H : SK6812_T0H;
+      }
+    }
+  }
+
+  while (dma_index < SK6812_DMA_BUF_SIZE)
+  {
+    sk6812_dma_buffer[dma_index++] = 0u;
+  }
+}
+
+static HAL_StatusTypeDef SK6812_Show(void)
+{
+  if (sk6812_dma_busy != 0u)
+  {
+    return HAL_BUSY;
+  }
+
+  SK6812_FillDmaBuffer();
+  SK6812_DataPinAsTimer();
+  __HAL_TIM_SET_COUNTER(&htim3, 0u);
+  sk6812_dma_busy = 1u;
+
+  if (HAL_TIM_PWM_Start_DMA(&htim3,
+                            TIM_CHANNEL_1,
+                            (const uint32_t *)(const void *)sk6812_dma_buffer,
+                            SK6812_DMA_BUF_SIZE * sizeof(uint16_t)) != HAL_OK)
+  {
+    sk6812_dma_busy = 0u;
+    SK6812_DataPinAsGpioLow();
+    return HAL_ERROR;
+  }
+
+  return HAL_OK;
+}
+
+static void SK6812_Clear(void)
+{
+  for (uint8_t led = 0u; led < SK6812_LED_COUNT; led++)
+  {
+    SK6812_SetLedColor(led, 0u, 0u, 0u);
+  }
+}
+
+static void SK6812_ColorWheel(uint8_t position, uint8_t *r, uint8_t *g, uint8_t *b, uint8_t brightness)
+{
+  uint8_t wheel = (uint8_t)(255u - position);
+  uint8_t red;
+  uint8_t green;
+  uint8_t blue;
+
+  if (wheel < 85u)
+  {
+    red = (uint8_t)(255u - (wheel * 3u));
+    green = 0u;
+    blue = (uint8_t)(wheel * 3u);
+  }
+  else if (wheel < 170u)
+  {
+    wheel = (uint8_t)(wheel - 85u);
+    red = 0u;
+    green = (uint8_t)(wheel * 3u);
+    blue = (uint8_t)(255u - (wheel * 3u));
+  }
+  else
+  {
+    wheel = (uint8_t)(wheel - 170u);
+    red = (uint8_t)(wheel * 3u);
+    green = (uint8_t)(255u - (wheel * 3u));
+    blue = 0u;
+  }
+
+  *r = (uint8_t)(((uint16_t)red * brightness) / 255u);
+  *g = (uint8_t)(((uint16_t)green * brightness) / 255u);
+  *b = (uint8_t)(((uint16_t)blue * brightness) / 255u);
+}
+
+static void SK6812_UpdateLeds(uint16_t key_mask, uint32_t now)
+{
+  if (sk6812_dma_busy != 0u)
+  {
+    return;
+  }
+
+  if (sk6812_last_button_activity == 0u)
+  {
+    sk6812_last_button_activity = now;
+  }
+
+  if (key_mask != 0u)
+  {
+    sk6812_last_button_activity = now;
+    sk6812_idle_rainbow_active = 0u;
+
+    if (key_mask == sk6812_last_key_mask)
+    {
+      return;
+    }
+
+    SK6812_SetPressedKeyColors(key_mask);
+    sk6812_last_key_mask = key_mask;
+    (void)SK6812_Show();
+    return;
+  }
+
+  if (sk6812_last_key_mask != 0u)
+  {
+    sk6812_last_button_activity = now;
+    sk6812_idle_rainbow_active = 0u;
+    sk6812_last_key_mask = 0u;
+    SK6812_Clear();
+    (void)SK6812_Show();
+    return;
+  }
+
+  if ((now - sk6812_last_button_activity) < MATRIX_IDLE_RAINBOW_DELAY_MS)
+  {
+    return;
+  }
+
+  if ((sk6812_idle_rainbow_active != 0u) &&
+      ((now - sk6812_last_rainbow_frame) < MATRIX_IDLE_RAINBOW_FRAME_MS))
+  {
+    return;
+  }
+
+  SK6812_SetIdleRainbowFrame(sk6812_rainbow_offset);
+  sk6812_rainbow_offset = (uint8_t)(sk6812_rainbow_offset + SK6812_IDLE_STEP);
+  sk6812_last_rainbow_frame = now;
+  sk6812_idle_rainbow_active = 1u;
+  (void)SK6812_Show();
+}
+
+static void SK6812_SetPressedKeyColors(uint16_t key_mask)
+{
+  SK6812_Clear();
+
+  for (uint8_t led = 0u; led < SK6812_LED_COUNT; led++)
+  {
+    if ((key_mask & (uint16_t)(1u << led)) != 0u)
+    {
+      uint8_t r;
+      uint8_t g;
+      uint8_t b;
+      SK6812_ColorWheel((uint8_t)(led * (256u / SK6812_LED_COUNT)), &r, &g, &b, SK6812_BRIGHTNESS);
+      SK6812_SetLedColor(led, r, g, b);
+    }
+  }
+}
+
+static void SK6812_SetIdleRainbowFrame(uint8_t offset)
+{
+  for (uint8_t led = 0u; led < SK6812_LED_COUNT; led++)
+  {
+    uint8_t row = (uint8_t)(led / MATRIX_COLS);
+    uint8_t col = (uint8_t)(led % MATRIX_COLS);
+    uint8_t r;
+    uint8_t g;
+    uint8_t b;
+    uint8_t position = (uint8_t)(offset + (col * 28u) + (row * 18u));
+
+    SK6812_ColorWheel(position, &r, &g, &b, SK6812_IDLE_BRIGHTNESS);
+    SK6812_SetLedColor(led, r, g, b);
+  }
+}
+
 static void ADC_Start(void)
 {
   if (HAL_TIM_Base_Start(&htim6) != HAL_OK)
@@ -102,16 +418,75 @@ static void ADC_Start(void)
   }
 }
 
+static uint8_t Pot_NormalizeMidiValue(uint8_t adc_value)
+{
+  uint8_t midi_value = adc_value >> 1;
+
+  if (midi_value <= POT_EDGE_DEADBAND)
+  {
+    return 0u;
+  }
+
+  if (midi_value >= (MIDI_CC_MAX_VALUE - POT_EDGE_DEADBAND))
+  {
+    return MIDI_CC_MAX_VALUE;
+  }
+
+  return midi_value;
+}
+
 static void ProcessPotentiometers(void)
 {
+  static uint32_t last_pot_process_time = 0u;
+  uint32_t now = HAL_GetTick();
+
+  if ((now - last_pot_process_time) < POT_PROCESS_MS)
+  {
+    return;
+  }
+
+  last_pot_process_time = now;
+
   for (uint8_t i = 0u; i < NUM_POTS; i++)
   {
-    uint8_t new_value = adc_buffer[i] >> 1;
+    uint8_t new_value = Pot_NormalizeMidiValue(adc_buffer[i]);
     int16_t diff = (int16_t)new_value - (int16_t)last_midi_values[i];
 
     if (diff < 0)
     {
       diff = -diff;
+    }
+
+    if ((uint16_t)diff < POT_HYSTERESIS)
+    {
+      pot_candidate_values[i] = new_value;
+      pot_candidate_counts[i] = 0u;
+      continue;
+    }
+
+    if ((uint16_t)diff < POT_FAST_CHANGE_THRESHOLD)
+    {
+      if (new_value != pot_candidate_values[i])
+      {
+        pot_candidate_values[i] = new_value;
+        pot_candidate_counts[i] = 1u;
+        continue;
+      }
+
+      if (pot_candidate_counts[i] < POT_STABLE_SCANS)
+      {
+        pot_candidate_counts[i]++;
+      }
+
+      if (pot_candidate_counts[i] < POT_STABLE_SCANS)
+      {
+        continue;
+      }
+    }
+    else
+    {
+      pot_candidate_values[i] = new_value;
+      pot_candidate_counts[i] = POT_STABLE_SCANS;
     }
 
     if ((uint16_t)diff >= POT_HYSTERESIS)
@@ -150,19 +525,23 @@ static uint16_t Matrix_ScanRaw(void)
 {
   uint16_t raw_keys = 0u;
 
+  MCP_Write(MCP_OLATA, 0x00u);
+
   for (uint8_t col = 0u; col < MATRIX_COLS; col++)
   {
-    uint8_t active_columns = (uint8_t)(0x0Fu & ~(1u << col));
+    uint8_t active_column = (uint8_t)(1u << col);
+    uint8_t column_iodir = (uint8_t)(MATRIX_PORTA_UNUSED_INPUT_MASK |
+                                     (MATRIX_COLUMN_MASK & (uint8_t)~active_column));
     uint8_t rows;
 
-    MCP_Write(MCP_GPIOA, active_columns);
+    MCP_Write(MCP_IODIRA, column_iodir);
 
-    for (volatile uint32_t settle = 0u; settle < 64u; settle++)
+    for (volatile uint32_t settle = 0u; settle < 500u; settle++)
     {
       __NOP();
     }
 
-    rows = (uint8_t)(~MCP_Read(MCP_GPIOB)) & 0x0Fu;
+    rows = (uint8_t)(~MCP_Read(MCP_GPIOB)) & MATRIX_ROW_MASK;
 
     for (uint8_t row = 0u; row < MATRIX_ROWS; row++)
     {
@@ -174,7 +553,7 @@ static uint16_t Matrix_ScanRaw(void)
     }
   }
 
-  MCP_Write(MCP_GPIOA, 0x0Fu);
+  MCP_Write(MCP_IODIRA, MATRIX_ALL_COLUMNS_INPUT_IODIR);
 
   return raw_keys;
 }
@@ -315,7 +694,14 @@ int main(void)
   // Initialize MCP23S17 (SPI IO Expander)
   MCP_Init();
 
+  MX_TIM3_Init();
   ADC_Start();
+
+  SK6812_Clear();
+  if (SK6812_Show() != HAL_OK)
+  {
+    Error_Handler();
+  }
 
   /* USER CODE END 2 */
 
@@ -363,7 +749,7 @@ int main(void)
     ProcessPotentiometers();
 
     // Matrix scan + debounce + edge detection
-    if (mcp_ready && tud_mounted())
+    if (mcp_ready)
     {
       if ((now - last_scan_time) >= MATRIX_SCAN_MS)
       {
@@ -372,6 +758,8 @@ int main(void)
         Matrix_UpdateDebounce(raw_keys, &stable_keys, debounce_count);
       }
     }
+
+    SK6812_UpdateLeds(stable_keys, now);
 
     /* USER CODE END WHILE */
 
@@ -470,7 +858,7 @@ static void MX_ADC1_Init(void)
   hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
   hadc1.Init.LowPowerAutoWait = DISABLE;
   hadc1.Init.ContinuousConvMode = DISABLE;
-  hadc1.Init.NbrOfConversion = 2;
+  hadc1.Init.NbrOfConversion = 8;
   hadc1.Init.DiscontinuousConvMode = DISABLE;
   hadc1.Init.ExternalTrigConv = ADC_EXTERNALTRIG_T6_TRGO;
   hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_RISING;
@@ -504,6 +892,60 @@ static void MX_ADC1_Init(void)
   {
     Error_Handler();
   }
+
+  /** Configure Regular Channel
+  */
+  sConfig.Channel = ADC_CHANNEL_5;
+  sConfig.Rank = ADC_REGULAR_RANK_3;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Regular Channel
+  */
+  sConfig.Channel = ADC_CHANNEL_8;
+  sConfig.Rank = ADC_REGULAR_RANK_4;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Regular Channel
+  */
+  sConfig.Channel = ADC_CHANNEL_9;
+  sConfig.Rank = ADC_REGULAR_RANK_5;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Regular Channel
+  */
+  sConfig.Channel = ADC_CHANNEL_10;
+  sConfig.Rank = ADC_REGULAR_RANK_6;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Regular Channel
+  */
+  sConfig.Channel = ADC_CHANNEL_11;
+  sConfig.Rank = ADC_REGULAR_RANK_7;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Regular Channel
+  */
+  sConfig.Channel = ADC_CHANNEL_12;
+  sConfig.Rank = ADC_REGULAR_RANK_8;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
   /* USER CODE BEGIN ADC1_Init 2 */
 
   /* USER CODE END ADC1_Init 2 */
@@ -530,6 +972,8 @@ static void MX_GPDMA1_Init(void)
     HAL_NVIC_EnableIRQ(GPDMA1_Channel0_IRQn);
 
   /* USER CODE BEGIN GPDMA1_Init 1 */
+  HAL_NVIC_SetPriority(GPDMA1_Channel1_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(GPDMA1_Channel1_IRQn);
 
   /* USER CODE END GPDMA1_Init 1 */
   /* USER CODE BEGIN GPDMA1_Init 2 */
@@ -561,7 +1005,7 @@ static void MX_SPI1_Init(void)
   hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi1.Init.NSS = SPI_NSS_SOFT;
-  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_32;
+  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_64;
   hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -673,19 +1117,19 @@ static void MX_GPIO_Init(void)
   /* USER CODE END MX_GPIO_Init_1 */
 
   /* GPIO Ports Clock Enable */
-  __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOC_CLK_ENABLE();
+  __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_9, GPIO_PIN_SET);
 
-  /*Configure GPIO pin : PA4 */
-  GPIO_InitStruct.Pin = GPIO_PIN_4;
+  /*Configure GPIO pin : PC9 */
+  GPIO_InitStruct.Pin = GPIO_PIN_9;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PC4 */
   GPIO_InitStruct.Pin = GPIO_PIN_4;
@@ -699,6 +1143,23 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim)
+{
+  if (htim->Instance == TIM3)
+  {
+    (void)HAL_TIM_PWM_Stop_DMA(htim, TIM_CHANNEL_1);
+    __HAL_TIM_SET_COMPARE(htim, TIM_CHANNEL_1, 0u);
+    htim->Instance->CR1 &= ~0x0001U;
+    __HAL_TIM_SET_COUNTER(htim, 0u);
+    SK6812_DataPinAsGpioLow();
+    sk6812_dma_busy = 0u;
+  }
+}
+
+void HAL_TIM_PWM_PulseFinishedHalfCpltCallback(TIM_HandleTypeDef *htim)
+{
+  (void)htim;
+}
 
 /* USER CODE END 4 */
 

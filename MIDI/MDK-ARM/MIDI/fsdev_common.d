@@ -36,6 +36,7 @@ midi/fsdev_common.o: \
   ..\Drivers\STM32H5xx_HAL_Driver\Inc\stm32h5xx_hal_pcd_ex.h \
   ..\Drivers\STM32H5xx_HAL_Driver\Inc\stm32h5xx_hal_exti.h \
   ..\Middlewares\Third_Party\TinyUSB\src\common\tusb_mcu.h \
+  ..\Drivers\CMSIS\Include\cmsis_compiler.h \
   ..\Middlewares\Third_Party\TinyUSB\src\portable\st\stm32_fsdev\fsdev_common.h \
   ..\Middlewares\Third_Party\TinyUSB\src\common\tusb_common.h \
   ..\Middlewares\Third_Party\TinyUSB\src\common\tusb_verify.h \

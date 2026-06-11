@@ -1,14 +1,14 @@
 #include "mcp23s17.h"
 
-// External handle from main.c (Now using SPI1 as per D10-D13 wiring)
+// External handle from main.c (SPI1 on Arduino D10-D13 wiring)
 extern SPI_HandleTypeDef hspi1;
 
-// Default CS from project config (can be overridden in main.h)
+// Fixed chip-select on Arduino D10 / PC9.
 #ifndef MCP_CS_GPIO_Port
-#define MCP_CS_GPIO_Port GPIOA
+#define MCP_CS_GPIO_Port GPIOC
 #endif
 #ifndef MCP_CS_Pin
-#define MCP_CS_Pin GPIO_PIN_4
+#define MCP_CS_Pin GPIO_PIN_9
 #endif
 
 typedef struct
@@ -116,40 +116,25 @@ uint8_t MCP_Read(uint8_t reg) {
   */
 void MCP_Init(void) {
     GPIO_InitTypeDef GPIO_InitStruct = {0};
-    const mcp_cs_t candidates[] = {
-        {MCP_CS_GPIO_Port, MCP_CS_Pin},  // Project-configured default first
-        {GPIOC, GPIO_PIN_9},             // Arduino D10 on NUCLEO-H533RE
-        {GPIOA, GPIO_PIN_4},             // Legacy project wiring
-        {GPIOB, GPIO_PIN_6}              // Alternative wiring found on some setups
-    };
 
     s_mcp_ready = 0;
+    s_active_cs.port = MCP_CS_GPIO_Port;
+    s_active_cs.pin = MCP_CS_Pin;
 
-    // Ensure GPIO clocks for candidate CS pins are enabled
-    __HAL_RCC_GPIOA_CLK_ENABLE();
-    __HAL_RCC_GPIOB_CLK_ENABLE();
+    // Ensure the fixed CS GPIO is available.
     __HAL_RCC_GPIOC_CLK_ENABLE();
 
-    // Configure candidates as outputs, idle HIGH
-    for (uint8_t i = 0; i < (sizeof(candidates) / sizeof(candidates[0])); i++)
-    {
-        GPIO_InitStruct.Pin = candidates[i].pin;
-        GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-        GPIO_InitStruct.Pull = GPIO_NOPULL;
-        GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-        HAL_GPIO_Init(candidates[i].port, &GPIO_InitStruct);
-        mcp_cs_write(candidates[i].port, candidates[i].pin, GPIO_PIN_SET);
-    }
+    GPIO_InitStruct.Pin = s_active_cs.pin;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+    HAL_GPIO_Init(s_active_cs.port, &GPIO_InitStruct);
+    mcp_cs_write(s_active_cs.port, s_active_cs.pin, GPIO_PIN_SET);
 
-    // Probe candidate CS pins and pick the first that replies correctly
-    for (uint8_t i = 0; i < (sizeof(candidates) / sizeof(candidates[0])); i++)
+    // Verify the expander answers on the fixed D10/PC9 chip-select line.
+    if (mcp_probe_cs(s_active_cs.port, s_active_cs.pin))
     {
-        if (mcp_probe_cs(candidates[i].port, candidates[i].pin))
-        {
-            s_active_cs = candidates[i];
-            s_mcp_ready = 1;
-            break;
-        }
+        s_mcp_ready = 1;
     }
 
     if (s_mcp_ready == 0)
@@ -157,8 +142,9 @@ void MCP_Init(void) {
         return;
     }
 
-    // 1) GPA0..GPA3 outputs (columns), GPA4..GPA7 inputs
-    MCP_Write(MCP_IODIRA, 0xF0);
+    // 1) GPA0..GPA3 columns idle high-Z; scan code enables one low output at a time.
+    MCP_Write(MCP_OLATA, 0x00);
+    MCP_Write(MCP_IODIRA, 0xFF);
 
     // 2) GPB0..GPB3 inputs (rows), GPB4..GPB7 don't care
     MCP_Write(MCP_IODIRB, 0x0F);
@@ -166,8 +152,8 @@ void MCP_Init(void) {
     // 3) Pull-ups on row inputs
     MCP_Write(MCP_GPPUB, 0x0F);
 
-    // 4) Idle columns HIGH
-    MCP_Write(MCP_GPIOA, 0x0F);
+    // 4) Keep the output latch low for open-drain-style column scanning.
+    MCP_Write(MCP_OLATA, 0x00);
 }
 
 uint8_t MCP_IsReady(void)
